@@ -16,7 +16,7 @@ if __name__ == '__main__':
 Session = sessionmaker(bind=engine)
 session = Session()
 
-with open('C:\\Users\\Admin\\Desktop\\orm\\test_data.json', 'r') as f:
+with open('test_data.json', 'r') as f:
     data = json.load(f)
 
 for r in data:
