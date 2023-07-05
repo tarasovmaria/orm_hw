@@ -1,22 +1,17 @@
 import json
 
-
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 from models import create_tables, Publishers, Books, Shops, Stocks, Sales
 
-DSN = f'postgresql://postgres:password@localhost:5432/bookshop'
-    
+DSN = f'postgresql://postgres:password.@localhost:5432/bookshop'
+# Я пыталась разобраться с os и получением параметров из окружения через .getenv и config, но не могу до конца понять логику написания кода для этого. Буду признательна, если сможете объяснить.
 engine = sqlalchemy.create_engine(DSN)
-
-if __name__ == '__main__':
-    create_tables(engine)
-    # drop_tables(engine)
 
 Session = sessionmaker(bind=engine)
 session = Session()
 
-with open('test_data.json', 'r') as f:
+with open('C:\\Users\\Admin\\Desktop\\orm\\test_data.json', 'r') as f:
     data = json.load(f)
 
 for r in data:
@@ -30,25 +25,19 @@ for r in data:
     session.add(model(id=r.get('pk'), **r.get('fields')))
 session.commit()
 
-publisher_name = str(input('Введите название издательства: '))
-publisher_id = int(input('Введите id издательства: '))
-
-def get_sales_info_by_publisher(publisher_name=None, publisher_id=None):
-    if publisher_id is not None and publisher_name is None:
-        for c in session.query(Books.title).join(Stocks.book).join(Stocks.shop).join(Shops.name).join(Sales.stock).join(Sales.price).join(Sales.date_sale).filter(Publishers.id == publisher_id):
-            print(c)
-    elif publisher_name is not None and publisher_id is None:
-        for c in session.query(Books.title).join(Stocks.book).join(Stocks.shop).join(Shops.name).join(Sales.stock).join(Sales.price).join(Sales.date_sale).filter(Publishers.name == publisher_name):
-            print(c)
-    elif publisher_name is not None and publisher_id is not None:
-        for c in session.query(Books.title).join(Stocks.book).join(Stocks.shop).join(Shops.name).join(Sales.stock).join(Sales.price).join(Sales.date_sale).filter(Publishers.name == publisher_name, Publishers.id == publisher_id):
-            print(c)
-    elif publisher_name is None and publisher_id is None:
-        print('Введите необходимые сведения об издательстве!')
+def get_sales_info_by_publisher(publisher_info=None):
+    request = session.query(Books.title, Shops.name, Sales.price, Sales.date_sale).select_from(Shops).join(Stocks, Stocks.id_shop == Shops.id).join(Books, Books.id == Stocks.id_book).join(Publishers, Publishers.id == Books.id_publisher).join(Sales, Sales.id_stock == Stocks.id)
+    if publisher_info.isdigit():
+        request = request.filter(Publishers.id == publisher_info).all()
+        for book_title, shop, price, date in request:
+            print(f"{book_title: <40} | {shop: <10} | {price: <8} | {date.strftime('%d-%m-%Y')}")
+    else:
+        request = request.filter(Publishers.name == publisher_info).all()
+        for book_title, shop, price, date in request:
+            print(f"{book_title: <40} | {shop: <10} | {price: <8} | {date.strftime('%d-%m-%Y')}")
 
 if __name__ == '__main__':
-    # get_sales_info_by_publisher(publisher_name, publisher_id)
-    # get_sales_info_by_publisher(None, publisher_id)
-    get_sales_info_by_publisher(publisher_name, None)
-
+    create_tables(engine)
+    publisher_info = input('Введите название издательства или id: ')
+    get_sales_info_by_publisher(publisher_info)
 session.close()
