@@ -2,7 +2,7 @@ import json
 
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
-from models import create_tables, Publishers, Books, Shops, Stocks, Sales
+from models import create_tables, drop_tables, Publishers, Books, Shops, Stocks, Sales
 
 DSN = f'postgresql://postgres:password.@localhost:5432/bookshop'
 # Я пыталась разобраться с os и получением параметров из окружения через .getenv и config, но не могу до конца понять логику написания кода для этого. Буду признательна, если сможете объяснить.
@@ -37,6 +37,7 @@ def get_sales_info_by_publisher(publisher_info=None):
             print(f"{book_title: <40} | {shop: <10} | {price: <8} | {date.strftime('%d-%m-%Y')}")
 
 if __name__ == '__main__':
+    drop_tables(engine)
     create_tables(engine)
     publisher_info = input('Введите название издательства или id: ')
     get_sales_info_by_publisher(publisher_info)
